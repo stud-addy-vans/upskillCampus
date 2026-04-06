@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS Blog Builder</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; margin: 0; height: 100vh; }
+        .sidebar { width: 250px; background: #f4f4f4; padding: 20px; border-right: 2px solid #ccc; }
+        .draggable { background: white; border: 1px dashed #333; padding: 10px; margin-bottom: 10px; cursor: grab; }
+        .canvas { flex-grow: 1; padding: 20px; background: #eaeff2; }
+        .dropzone { min-height: 300px; background: white; border: 2px dashed #999; padding: 20px; margin-bottom: 20px; }
+        .editor { width: 100%; height: 100px; margin-bottom: 10px; padding: 10px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h3>Tool Palette</h3>
+        <div class="draggable" draggable="true" id="text-block">Text Placeholder</div>
+        <div class="draggable" draggable="true" id="image-block">Image Placeholder</div>
+    </div>
+
+    <div class="canvas">
+        <h2>Blog Page Builder</h2>
+        
+        <div class="dropzone" id="dropzone">
+            <p style="color: #888;">Drop your placeholders here...</p>
+        </div>
+
+        <h3>Blog Content Editor</h3>
+        <textarea class="editor" id="blogContent" placeholder="Write your blog post here... (e.g., <h1>My Title</h1> <p>My text</p>)"></textarea>
+        
+        <button onclick="publishPost()">Publish to Database</button>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        // Drag and Drop Logic
+        const draggables = document.querySelectorAll('.draggable');
+        const dropzone = document.getElementById('dropzone');
+
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', e.target.id);
+            });
+        });
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Allows dropping
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain');
+            const draggedElement = document.getElementById(id).cloneNode(true);
+            draggedElement.style.cursor = 'default';
+            draggedElement.draggable = false;
+            dropzone.appendChild(draggedElement);
+        });
+
+        // API Request Logic
+        async function publishPost() {
+            const content = document.getElementById('blogContent').value;
+            const status = document.getElementById('status');
+
+            if (!content) {
+                status.innerText = "Please write some content first!";
+                status.style.color = "red";
+                return;
+            }
+
+            try {
+                // Send a POST request to our Node.js backend
+                const response = await fetch('/api/publish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ htmlContent: content })
+                });
+
+                if (response.ok) {
+                    status.innerText = "Blog published successfully!";
+                    status.style.color = "green";
+                }
+            } catch (error) {
+                status.innerText = "Error publishing blog.";
+                status.style.color = "red";
+            }
+        }
+    </script>
+</body>
+</html>
